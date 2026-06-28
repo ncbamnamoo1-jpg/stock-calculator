@@ -526,6 +526,20 @@
 // ── State ──
 let upPct = 5, downPct = 3;
 
+// ── 입력값 자동 저장/복원 ──
+function saveInputs() {
+  localStorage.setItem('stockName', document.getElementById('stockName').value);
+  localStorage.setItem('curPrice', document.getElementById('curPrice').value);
+  localStorage.setItem('prevPrice', document.getElementById('prevPrice').value);
+}
+function loadInputs() {
+  const n = localStorage.getItem('stockName'); if (n) document.getElementById('stockName').value = n;
+  const c = localStorage.getItem('curPrice');  if (c) document.getElementById('curPrice').value = c;
+  const p = localStorage.getItem('prevPrice'); if (p) document.getElementById('prevPrice').value = p;
+  calc();
+}
+window.addEventListener('DOMContentLoaded', loadInputs);
+
 // ── Format ──
 const fmt = n => Math.round(n).toLocaleString('ko-KR');
 const fmtPct = n => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
@@ -542,6 +556,7 @@ function onSlider(el, dir) {
 
 // ── Calc ──
 function calc() {
+  saveInputs();
   const cur  = parseFloat(document.getElementById('curPrice').value) || 0;
   const prev = parseFloat(document.getElementById('prevPrice').value) || 0;
 
