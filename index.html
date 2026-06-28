@@ -694,16 +694,28 @@ async function saveToSheets() {
   if (!cur) { showToast('현재가를 입력해주세요', 'err'); return; }
 
   const prevChg = prev ? fmtPct((cur - prev) / prev * 100) : '';
+  const buySummary = splitBuy.map((item,i) => {
+    const price = Math.round(cur * (1 - item.pct/100));
+    const amt = price * item.qty;
+    return `${i+1}차:${item.pct}%/${fmt(price)}원×${item.qty}주${amt>0?'='+fmt(amt)+'원':''}`;
+  }).join(' | ');
+  const sellSummary = splitSell.map((item,i) => {
+    const price = Math.round(cur * (1 + item.pct/100));
+    const amt = price * item.qty;
+    return `${i+1}차:${item.pct}%/${fmt(price)}원×${item.qty}주${amt>0?'='+fmt(amt)+'원':''}`;
+  }).join(' | ');
   const payload = {
-    time:       new Date().toLocaleString('ko-KR'),
+    time:        new Date().toLocaleString('ko-KR'),
     name,
     cur,
-    prev:       prev || '',
+    prev:        prev || '',
     prevChg,
-    upPct:      upPct + '%',
-    upTarget:   Math.round(cur * (1 + upPct / 100)),
-    downPct:    downPct + '%',
-    downTarget: Math.round(cur * (1 - downPct / 100))
+    upPct:       upPct + '%',
+    upTarget:    Math.round(cur * (1 + upPct / 100)),
+    downPct:     downPct + '%',
+    downTarget:  Math.round(cur * (1 - downPct / 100)),
+    buySplit:    buySummary,
+    sellSplit:   sellSummary
   };
 
   const btn = document.getElementById('saveBtn');
@@ -859,6 +871,7 @@ function onSplitQty(el, type, i) {
 }
 
 function calcSplit() {
+  if (!document.getElementById('buyPrice0')) return; // 아직 DOM 준비 안됨
   const cur = parseFloat(document.getElementById('curPrice').value) || 0;
   let buySum = 0, sellSum = 0;
   splitBuy.forEach((item, i) => {
@@ -880,9 +893,9 @@ function calcSplit() {
 }
 
 // ── Init ──
-window.addEventListener('load', () => {
-  calc();
+window.addEventListener('DOMContentLoaded', () => {
   buildSplitRows();
+  loadInputs();
 });
 </script>
 </body>
