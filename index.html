@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>주식 계산기</title>
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="주식계산기">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+    body {
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      min-height: 100vh;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #ffffff;
+      padding: 16px 20px;
+      padding-top: calc(16px + env(safe-area-inset-top));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky; top: 0; z-index: 50;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+    .icon-btn {
+      background: #f1f5f9;
+      border: none;
+      color: #475569;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px 10px;
+      border-radius: 10px;
+    }
+
+    /* ── Content ── */
+    .content { padding: 14px 14px 0; }
+
+    /* ── Card ── */
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 18px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .section-title {
+      font-size: 13px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+
+    /* ── Inputs ── */
+    .input-group { margin-bottom: 16px; }
+    .input-group:last-child { margin-bottom: 0; }
+    .input-label { font-size: 14px; color: #64748b; margin-bottom: 8px; font-weight: 500; }
+    .input-field {
+      width: 100%;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: #1e293b;
+      font-size: 19px;
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .input-field:focus { border-color: #3b82f6; }
+    .input-field::placeholder { color: #cbd5e1; }
+
+    /* ── 전일 대비 표시 ── */
+    .prev-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .prev-label { font-size: 15px; color: #64748b; font-weight: 500; }
+    .prev-value { font-size: 17px; font-weight: 700; color: #94a3b8; }
+
+    /* ── Sliders ── */
+    .slider-section { margin-bottom: 6px; }
+    .slider-section:last-child { margin-bottom: 0; }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .slider-label { font-size: 16px; font-weight: 700; }
+    .slider-label.up { color: #22c55e; }
+    .slider-label.down { color: #ef4444; }
+    .slider-val { font-size: 28px; font-weight: 800; }
+    .slider-val.up { color: #22c55e; }
+    .slider-val.down { color: #ef4444; }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range].up {
+      background: linear-gradient(to right, #22c55e var(--pct,16%), #dcfce7 var(--pct,16%));
+    }
+    input[type=range].down {
+      background: linear-gradient(to right, #ef4444 var(--pct,16%), #fee2e2 var(--pct,16%));
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      border: 2px solid #cbd5e1;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      border: 2px solid #cbd5e1;
+    }
+
+    .divider { height: 1px; background: #e2e8f0; margin: 16px 0; }
+
+    /* ── Target price boxes ── */
+    .target-boxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .target-box {
+      border-radius: 14px;
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .target-box.up  { background: #f0fdf4; border: 1px solid #86efac; }
+    .target-box.down { background: #fff1f2; border: 1px solid #fecdd3; }
+    .tb-label { font-size: 13px; font-weight: 700; letter-spacing: 0.3px; margin-bottom: 8px; }
+    .target-box.up .tb-label  { color: #15803d; }
+    .target-box.down .tb-label { color: #b91c1c; }
+    .tb-price { font-size: 22px; font-weight: 800; line-height: 1; }
+    .target-box.up .tb-price  { color: #16a34a; }
+    .target-box.down .tb-price { color: #dc2626; }
+    .tb-pct { font-size: 13px; margin-top: 6px; font-weight: 500; }
+    .target-box.up .tb-pct  { color: #22c55e; }
+    .target-box.down .tb-pct { color: #ef4444; }
+
+    /* ── Difference display ── */
+    .diff-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 11px 14px;
+      margin-top: 10px;
+      border: 1px solid #e2e8f0;
+    }
+    .diff-label { font-size: 14px; color: #64748b; font-weight: 500; }
+    .diff-val { font-size: 16px; font-weight: 700; color: #475569; }
+
+    /* ── Save button ── */
+    .save-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+      transition: opacity 0.2s;
+      -webkit-appearance: none;
+    }
+    .save-btn:active { opacity: 0.8; }
+    .save-btn:disabled { background: #e2e8f0; color: #94a3b8; }
+
+    /* ── Copy button (in modal code block) ── */
+    .copy-btn {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      float: right;
+      margin-bottom: 6px;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: #1e293b;
+      color: #f1f5f9;
+      padding: 12px 22px;
+      border-radius: 22px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 300;
+      white-space: nowrap;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.ok  { border-left: 3px solid #22c55e; }
+    .toast.err { border-left: 3px solid #ef4444; }
+    .toast.info { border-left: 3px solid #3b82f6; }
+
+    /* ── Settings Modal ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+      display: flex; align-items: flex-end;
+    }
+    .overlay.show { opacity: 1; pointer-events: auto; }
+    .modal {
+      background: #ffffff;
+      border-radius: 24px 24px 0 0;
+      padding: 24px 18px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    .overlay.show .modal { transform: translateY(0); }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title { font-size: 20px; font-weight: 700; }
+    .close-btn {
+      background: #f1f5f9; border: none; color: #64748b;
+      font-size: 20px; cursor: pointer;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-note {
+      font-size: 14px; color: #94a3b8;
+      margin-top: 8px; line-height: 1.7;
+    }
+    .modal-save {
+      width: 100%; background: #3b82f6; color: white;
+      border: none; border-radius: 12px; padding: 16px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      margin-top: 16px;
+    }
+    .step-list {
+      font-size: 15px; color: #64748b; line-height: 2.0;
+      margin-top: 8px;
+    }
+    .step-list a { color: #60a5fa; }
+    .code-block {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      color: #4ade80;
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* ── History log ── */
+    .history-item {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 15px;
+      border: 1px solid #e2e8f0;
+    }
+    .history-item:last-child { margin-bottom: 0; }
+    .history-stock { font-weight: 700; color: #1e293b; }
+    .history-meta { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+    .history-empty { color: #94a3b8; font-size: 15px; text-align: center; padding: 16px; }
+    .clear-btn {
+      background: #7f1d1d;
+      border: none;
+      color: #fca5a5;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>📈 주식 계산기</h1>
+  <div class="header-right">
+    <button class="icon-btn" onclick="openHistory()" title="저장 기록">🗒️</button>
+    <button class="icon-btn" onclick="openSettings()" title="설정">⚙️</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- 종목 정보 입력 -->
+  <div class="card">
+    <div class="section-title">종목 정보 입력</div>
+    <div class="input-group">
+      <div class="input-label">종목명</div>
+      <input class="input-field" type="text" id="stockName" placeholder="예: 삼성전자" oninput="calc()">
+    </div>
+    <div class="input-group">
+      <div class="input-label">현재가 (원)</div>
+      <input class="input-field" type="number" id="curPrice" placeholder="예: 71500" inputmode="numeric" oninput="calc()">
+    </div>
+    <div class="input-group">
+      <div class="input-label">전일 시가 (원)</div>
+      <input class="input-field" type="number" id="prevPrice" placeholder="예: 70500" inputmode="numeric" oninput="calc()">
+    </div>
+    <div class="prev-row">
+      <span class="prev-label">📊 전일 시가 대비</span>
+      <span class="prev-value" id="prevChange">—</span>
+    </div>
+  </div>
+
+  <!-- 슬라이더 -->
+  <div class="card">
+    <div class="section-title">목표 % 슬라이더</div>
+
+    <!-- 상승 -->
+    <div class="slider-section">
+      <div class="slider-header">
+        <span class="slider-label up">▲ 상승 목표</span>
+        <span class="slider-val up" id="upVal">5.0%</span>
+      </div>
+      <input type="range" class="up" id="upSlider"
+        min="0.5" max="30" step="0.5" value="5"
+        oninput="onSlider(this,'up')">
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 하락 -->
+    <div class="slider-section">
+      <div class="slider-header">
+        <span class="slider-label down">▼ 하락 목표</span>
+        <span class="slider-val down" id="downVal">3.0%</span>
+      </div>
+      <input type="range" class="down" id="downSlider"
+        min="0.5" max="30" step="0.5" value="3"
+        oninput="onSlider(this,'down')">
+    </div>
+  </div>
+
+  <!-- 목표가 결과 -->
+  <div class="card">
+    <div class="section-title">목표가 계산 결과</div>
+    <div class="target-boxes">
+      <div class="target-box up">
+        <div class="tb-label">▲ 상승 목표가</div>
+        <div class="tb-price" id="upTarget">—</div>
+        <div class="tb-pct" id="upDiff"></div>
+      </div>
+      <div class="target-box down">
+        <div class="tb-label">▼ 하락 목표가</div>
+        <div class="tb-price" id="downTarget">—</div>
+        <div class="tb-pct" id="downDiff"></div>
+      </div>
+    </div>
+
+    <div class="diff-row" id="riskRow" style="display:none">
+      <span class="diff-label">손익비 (상승÷하락)</span>
+      <span class="diff-val" id="riskRatio">—</span>
+    </div>
+
+    <button class="save-btn" id="saveBtn" onclick="saveToSheets()">
+      <span>📊</span><span>구글 시트에 저장</span>
+    </button>
+  </div>
+
+</div><!-- /content -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ──────────── Settings Modal ──────────── -->
+<div class="overlay" id="settingsOverlay" onclick="overlayClick(event,'settingsOverlay')">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⚙️ 설정</span>
+      <button class="close-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="input-group">
+      <div class="input-label">구글 Apps Script 웹앱 URL</div>
+      <input class="input-field" type="url" id="sheetsUrl"
+        placeholder="https://script.google.com/macros/s/..." style="font-size:14px">
+      <div class="modal-note">저장 버튼을 누르면 이 URL로 데이터가 전송됩니다.</div>
+    </div>
+    <button class="modal-save" onclick="saveSettings()">저장</button>
+
+    <div class="divider"></div>
+
+    <div class="section-title">구글 시트 연동 방법</div>
+    <div class="step-list">
+      1. <a href="https://sheet.new" target="_blank">sheet.new</a> 에서 새 스프레드시트 생성<br>
+      2. 주소창에서 시트 ID 복사 (…/d/<b>여기</b>/edit)<br>
+      3. 확장 프로그램 → Apps Script 클릭<br>
+      4. 아래 코드를 붙여넣고 <b>YOUR_SHEET_ID</b> 교체 후 저장(💾)<br>
+      5. 배포 → 새 배포 → 웹앱<br>
+      6. 실행: 나 / 액세스: <b>모든 사용자</b> → 배포<br>
+      7. 생성된 URL을 위 칸에 붙여넣기
+    </div>
+
+    <button class="copy-btn" onclick="copyCode()">📋 코드 복사</button>
+    <div class="code-block" id="scriptCode">function doPost(e) {
+  var ss = SpreadsheetApp.openById('YOUR_SHEET_ID');
+  var sheet = ss.getSheets()[0];
+
+  // 헤더 자동 생성
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      '기록 시각','종목명','현재가','전일시가',
+      '전일대비%','상승%','상승목표가','하락%','하락목표가'
+    ]);
+    sheet.getRange(1,1,1,9)
+         .setFontWeight('bold')
+         .setBackground('#1a73e8')
+         .setFontColor('#ffffff');
+  }
+
+  var d = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    d.time, d.name, d.cur, d.prev,
+    d.prevChg, d.upPct, d.upTarget,
+    d.downPct, d.downTarget
+  ]);
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+  </div>
+</div>
+
+<!-- ──────────── History Modal ──────────── -->
+<div class="overlay" id="historyOverlay" onclick="overlayClick(event,'historyOverlay')">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🗒️ 저장 기록</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="clear-btn" onclick="clearHistory()">전체 삭제</button>
+        <button class="close-btn" onclick="closeHistory()">✕</button>
+      </div>
+    </div>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<script>
+// ── PWA Manifest (동적 삽입) ──
+(function() {
+  const m = {
+    name: '주식 계산기',
+    short_name: '주식계산기',
+    start_url: window.location.href,
+    display: 'standalone',
+    background_color: '#ffffff',
+    theme_color: '#ffffff',
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23ffffff'/%3E%3Ctext y='.9em' font-size='80'%3E📈%3C/text%3E%3C/svg%3E",
+      sizes: '192x192', type: 'image/svg+xml'
+    }]
+  };
+  const blob = new Blob([JSON.stringify(m)], {type:'application/json'});
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+})();
+
+// ── State ──
+let upPct = 5, downPct = 3;
+
+// ── Format ──
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const fmtPct = n => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+
+// ── Slider ──
+function onSlider(el, dir) {
+  const v = parseFloat(el.value);
+  const pct = ((v - parseFloat(el.min)) / (parseFloat(el.max) - parseFloat(el.min)) * 100).toFixed(1) + '%';
+  el.style.setProperty('--pct', pct);
+  if (dir === 'up') { upPct = v; document.getElementById('upVal').textContent = v.toFixed(1) + '%'; }
+  else { downPct = v; document.getElementById('downVal').textContent = v.toFixed(1) + '%'; }
+  calc();
+}
+
+// ── Calc ──
+function calc() {
+  const cur  = parseFloat(document.getElementById('curPrice').value) || 0;
+  const prev = parseFloat(document.getElementById('prevPrice').value) || 0;
+
+  // 전일 대비
+  const pcEl = document.getElementById('prevChange');
+  if (cur && prev) {
+    const chg = (cur - prev) / prev * 100;
+    pcEl.textContent = fmtPct(chg) + '  (' + fmt(cur - prev) + '원)';
+    pcEl.style.color = chg >= 0 ? '#22c55e' : '#ef4444';
+  } else {
+    pcEl.textContent = '—';
+    pcEl.style.color = '#64748b';
+  }
+
+  // 목표가
+  if (cur) {
+    const upT  = cur * (1 + upPct / 100);
+    const downT = cur * (1 - downPct / 100);
+    document.getElementById('upTarget').textContent   = fmt(upT) + '원';
+    document.getElementById('upDiff').textContent     = '+' + upPct.toFixed(1) + '% 목표  (+' + fmt(upT - cur) + '원)';
+    document.getElementById('downTarget').textContent = fmt(downT) + '원';
+    document.getElementById('downDiff').textContent   = '-' + downPct.toFixed(1) + '% 목표  (-' + fmt(cur - downT) + '원)';
+
+    // 손익비
+    const rr = (upPct / downPct).toFixed(2);
+    document.getElementById('riskRatio').textContent = rr + ' : 1';
+    document.getElementById('riskRow').style.display = 'flex';
+  } else {
+    ['upTarget','downTarget'].forEach(id => document.getElementById(id).textContent = '—');
+    ['upDiff','downDiff'].forEach(id => document.getElementById(id).textContent = '');
+    document.getElementById('riskRow').style.display = 'none';
+  }
+}
+
+// ── Save to Google Sheets ──
+async function saveToSheets() {
+  const url = localStorage.getItem('sheetsUrl') || '';
+  if (!url) { showToast('⚙️ 설정에서 Apps Script URL을 입력해주세요', 'info'); return; }
+
+  const cur  = parseFloat(document.getElementById('curPrice').value) || 0;
+  const prev = parseFloat(document.getElementById('prevPrice').value) || 0;
+  const name = document.getElementById('stockName').value.trim() || '미입력';
+  if (!cur) { showToast('현재가를 입력해주세요', 'err'); return; }
+
+  const prevChg = prev ? fmtPct((cur - prev) / prev * 100) : '';
+  const payload = {
+    time:       new Date().toLocaleString('ko-KR'),
+    name,
+    cur,
+    prev:       prev || '',
+    prevChg,
+    upPct:      upPct + '%',
+    upTarget:   Math.round(cur * (1 + upPct / 100)),
+    downPct:    downPct + '%',
+    downTarget: Math.round(cur * (1 - downPct / 100))
+  };
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span><span>저장 중...</span>';
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+      mode: 'no-cors'
+    });
+    saveLocal(payload);
+    showToast('✅ 구글 시트에 저장되었습니다!', 'ok');
+  } catch (err) {
+    showToast('❌ 전송 실패. URL 및 네트워크를 확인하세요', 'err');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>📊</span><span>구글 시트에 저장</span>';
+}
+
+// ── Local history ──
+function saveLocal(data) {
+  const hist = JSON.parse(localStorage.getItem('history') || '[]');
+  hist.unshift(data);
+  if (hist.length > 50) hist.pop();
+  localStorage.setItem('history', JSON.stringify(hist));
+}
+
+function renderHistory() {
+  const hist = JSON.parse(localStorage.getItem('history') || '[]');
+  const el = document.getElementById('historyList');
+  if (!hist.length) { el.innerHTML = '<div class="history-empty">저장 기록이 없습니다</div>'; return; }
+  el.innerHTML = hist.map(d => `
+    <div class="history-item">
+      <div class="history-stock">${d.name} &nbsp; <span style="color:#22c55e">${fmt(d.cur)}원</span></div>
+      <div class="history-meta">
+        ${d.time} &nbsp;·&nbsp;
+        전일대비 ${d.prevChg || '—'} &nbsp;·&nbsp;
+        ↑${d.upTarget ? fmt(d.upTarget)+'원' : '—'} / ↓${d.downTarget ? fmt(d.downTarget)+'원' : '—'}
+      </div>
+    </div>`).join('');
+}
+
+function clearHistory() {
+  if (!confirm('저장 기록을 모두 삭제할까요?')) return;
+  localStorage.removeItem('history');
+  renderHistory();
+}
+
+// ── Settings ──
+function openSettings() {
+  document.getElementById('sheetsUrl').value = localStorage.getItem('sheetsUrl') || '';
+  document.getElementById('settingsOverlay').classList.add('show');
+}
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('show'); }
+function saveSettings() {
+  localStorage.setItem('sheetsUrl', document.getElementById('sheetsUrl').value.trim());
+  closeSettings();
+  showToast('✅ URL 저장됨', 'ok');
+}
+
+// ── History modal ──
+function openHistory() {
+  renderHistory();
+  document.getElementById('historyOverlay').classList.add('show');
+}
+function closeHistory() { document.getElementById('historyOverlay').classList.remove('show'); }
+
+function overlayClick(e, id) {
+  if (e.target === document.getElementById(id)) {
+    document.getElementById(id).classList.remove('show');
+  }
+}
+
+// ── Copy code ──
+function copyCode() {
+  const code = document.getElementById('scriptCode').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('📋 코드 복사됨', 'ok'));
+}
+
+// ── Toast ──
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+// ── Init ──
+window.addEventListener('load', () => {
+  onSlider(document.getElementById('upSlider'), 'up');
+  onSlider(document.getElementById('downSlider'), 'down');
+});
+</script>
+</body>
+</html>
