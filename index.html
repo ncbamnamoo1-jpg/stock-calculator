@@ -578,7 +578,7 @@ function calc() {
 
 // ── Save to Google Sheets ──
 async function saveToSheets() {
-  const url = localStorage.getItem('sheetsUrl') || '';
+  const url = localStorage.getItem('sheetsUrl') || 'https://script.google.com/macros/s/AKfycbwykaj_TkPo4CNDHjCr9wWpo-loXjnWY3TjCkQCPzMpqIDlfr6GkNZZYDgcoA5luTi4/exec';
   if (!url) { showToast('⚙️ 설정에서 Apps Script URL을 입력해주세요', 'info'); return; }
 
   const cur  = parseFloat(document.getElementById('curPrice').value) || 0;
@@ -651,7 +651,7 @@ function clearHistory() {
 
 // ── Settings ──
 function openSettings() {
-  document.getElementById('sheetsUrl').value = localStorage.getItem('sheetsUrl') || '';
+  document.getElementById('sheetsUrl').value = localStorage.getItem('sheetsUrl') || 'https://script.google.com/macros/s/AKfycbwykaj_TkPo4CNDHjCr9wWpo-loXjnWY3TjCkQCPzMpqIDlfr6GkNZZYDgcoA5luTi4/exec';
   document.getElementById('settingsOverlay').classList.add('show');
 }
 function closeSettings() { document.getElementById('settingsOverlay').classList.remove('show'); }
